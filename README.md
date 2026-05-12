@@ -1,2 +1,0 @@
-# harsh.shrikundawar
-My Portfolio
