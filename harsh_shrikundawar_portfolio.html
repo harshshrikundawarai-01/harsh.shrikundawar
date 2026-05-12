@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Space+Mono:wght@400;700&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  body{
+    background:#020408;
+    color:#e0f0ff;
+    font-family:'Rajdhani',sans-serif;
+    overflow-x:hidden;
+    cursor:default;
+  }
+
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:#020408;}
+  ::-webkit-scrollbar-thumb{background:#0af;border-radius:2px;}
+
+  /* CANVAS BG */
+  #starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+
+  /* GRID OVERLAY */
+  .grid-overlay{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background-image:
+      linear-gradient(rgba(0,170,255,0.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,170,255,0.04) 1px,transparent 1px);
+    background-size:60px 60px;
+    z-index:0;pointer-events:none;
+  }
+
+  /* SCAN LINE */
+  .scanline{
+    position:fixed;top:0;left:0;width:100%;height:2px;
+    background:linear-gradient(90deg,transparent,rgba(0,200,255,0.6),transparent);
+    animation:scan 4s linear infinite;z-index:1;pointer-events:none;
+  }
+  @keyframes scan{from{top:-2px}to{top:100%}}
+
+  .content{position:relative;z-index:2;}
+
+  /* =================== HERO =================== */
+  .hero{
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    text-align:center;padding:40px 20px;
+    position:relative;overflow:hidden;
+  }
+
+  .hero-glow{
+    position:absolute;
+    width:600px;height:600px;
+    background:radial-gradient(circle,rgba(0,150,255,0.12) 0%,transparent 70%);
+    border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);
+    animation:pulse-glow 3s ease-in-out infinite;
+  }
+  @keyframes pulse-glow{0%,100%{opacity:0.6;transform:translate(-50%,-50%) scale(1);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1);}}
+
+  .orbit-ring{
+    position:absolute;border-radius:50%;border:1px solid rgba(0,170,255,0.15);
+    animation:spin linear infinite;
+  }
+  .orbit-1{width:340px;height:340px;top:50%;left:50%;margin:-170px 0 0 -170px;animation-duration:20s;}
+  .orbit-2{width:500px;height:500px;top:50%;left:50%;margin:-250px 0 0 -250px;animation-duration:35s;border-style:dashed;}
+  .orbit-3{width:680px;height:680px;top:50%;left:50%;margin:-340px 0 0 -340px;animation-duration:55s;}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+  .orbit-dot{
+    position:absolute;width:8px;height:8px;border-radius:50%;
+    background:#0af;box-shadow:0 0 10px #0af;top:-4px;left:50%;margin-left:-4px;
+  }
+
+  .avatar-ring{
+    width:120px;height:120px;border-radius:50%;
+    border:2px solid rgba(0,170,255,0.5);
+    background:linear-gradient(135deg,#0a1525,#112040);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Orbitron',monospace;font-size:36px;font-weight:900;
+    color:#0af;text-shadow:0 0 20px rgba(0,170,255,0.8);
+    position:relative;z-index:10;margin-bottom:24px;
+    box-shadow:0 0 40px rgba(0,150,255,0.3),inset 0 0 40px rgba(0,100,200,0.1);
+    animation:avatar-float 4s ease-in-out infinite;
+  }
+  @keyframes avatar-float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+
+  .hero-tag{
+    font-family:'Space Mono',monospace;font-size:11px;
+    color:#0af;letter-spacing:4px;text-transform:uppercase;
+    margin-bottom:12px;opacity:0.7;
+  }
+
+  .hero-name{
+    font-family:'Orbitron',monospace;
+    font-size:clamp(28px,5vw,52px);
+    font-weight:900;
+    color:#fff;
+    text-shadow:0 0 40px rgba(0,170,255,0.5);
+    line-height:1.1;margin-bottom:8px;
+    letter-spacing:2px;
+  }
+
+  .hero-name span{color:#0af;}
+
+  .hero-title{
+    font-family:'Rajdhani',sans-serif;
+    font-size:clamp(14px,2.5vw,20px);
+    font-weight:300;
+    color:rgba(200,230,255,0.7);
+    letter-spacing:3px;
+    margin-bottom:32px;
+  }
+
+  .type-cursor{display:inline-block;width:2px;height:1em;background:#0af;vertical-align:middle;animation:blink 1s step-end infinite;margin-left:2px;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+  .hero-badges{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:32px;}
+  .badge{
+    padding:6px 16px;border-radius:20px;
+    border:1px solid rgba(0,170,255,0.3);
+    background:rgba(0,100,200,0.1);
+    font-family:'Space Mono',monospace;font-size:10px;
+    color:#0af;letter-spacing:2px;
+    transition:all 0.3s;
+  }
+  .badge:hover{background:rgba(0,170,255,0.2);border-color:#0af;box-shadow:0 0 15px rgba(0,170,255,0.3);}
+
+  .hero-cta{
+    display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+  }
+  .btn-primary{
+    padding:12px 28px;border-radius:4px;
+    background:linear-gradient(135deg,#0066cc,#0099ff);
+    border:none;color:#fff;
+    font-family:'Orbitron',monospace;font-size:11px;
+    font-weight:700;letter-spacing:2px;cursor:pointer;
+    transition:all 0.3s;
+    box-shadow:0 0 20px rgba(0,150,255,0.4);
+    text-transform:uppercase;
+  }
+  .btn-primary:hover{box-shadow:0 0 35px rgba(0,170,255,0.6);transform:translateY(-2px);}
+  .btn-outline{
+    padding:12px 28px;border-radius:4px;
+    background:transparent;
+    border:1px solid rgba(0,170,255,0.5);
+    color:#0af;font-family:'Orbitron',monospace;font-size:11px;
+    font-weight:700;letter-spacing:2px;cursor:pointer;
+    transition:all 0.3s;text-transform:uppercase;
+  }
+  .btn-outline:hover{background:rgba(0,170,255,0.1);border-color:#0af;}
+
+  /* =================== SECTION =================== */
+  .section{padding:80px 20px;max-width:900px;margin:0 auto;}
+  .section-header{
+    display:flex;align-items:center;gap:16px;margin-bottom:48px;
+  }
+  .section-num{
+    font-family:'Orbitron',monospace;font-size:12px;
+    color:rgba(0,170,255,0.4);letter-spacing:2px;
+  }
+  .section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(0,170,255,0.4),transparent);}
+  .section-title{
+    font-family:'Orbitron',monospace;
+    font-size:clamp(18px,3vw,26px);font-weight:700;
+    color:#fff;letter-spacing:2px;
+  }
+  .section-title span{color:#0af;}
+
+  /* =================== SKILLS =================== */
+  .skills-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;}
+
+  .skill-card{
+    background:linear-gradient(135deg,rgba(5,15,35,0.9),rgba(10,25,55,0.8));
+    border:1px solid rgba(0,170,255,0.15);
+    border-radius:8px;padding:24px;
+    position:relative;overflow:hidden;
+    transition:all 0.4s;
+  }
+  .skill-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,#0af,transparent);
+    transform:scaleX(0);transition:transform 0.4s;
+  }
+  .skill-card:hover{border-color:rgba(0,170,255,0.4);transform:translateY(-4px);box-shadow:0 10px 40px rgba(0,100,200,0.2);}
+  .skill-card:hover::before{transform:scaleX(1);}
+
+  .skill-icon{
+    width:44px;height:44px;border-radius:8px;
+    background:rgba(0,100,200,0.15);border:1px solid rgba(0,170,255,0.2);
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;margin-bottom:14px;
+  }
+  .skill-name{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:#e0f0ff;letter-spacing:1px;margin-bottom:10px;}
+  .skill-tags{display:flex;flex-wrap:wrap;gap:6px;}
+  .skill-tag{
+    font-size:10px;padding:3px 10px;border-radius:3px;
+    background:rgba(0,100,200,0.12);border:1px solid rgba(0,170,255,0.2);
+    color:rgba(150,200,255,0.8);font-family:'Space Mono',monospace;
+  }
+
+  /* =================== EXPERIENCE =================== */
+  .timeline{position:relative;padding-left:40px;}
+  .timeline::before{
+    content:'';position:absolute;left:12px;top:0;bottom:0;
+    width:1px;background:linear-gradient(180deg,#0af,rgba(0,170,255,0.1));
+  }
+  .timeline-item{position:relative;margin-bottom:40px;}
+  .timeline-dot{
+    position:absolute;left:-34px;top:6px;
+    width:14px;height:14px;border-radius:50%;
+    background:#020408;border:2px solid #0af;
+    box-shadow:0 0 12px rgba(0,170,255,0.6);
+    transition:all 0.3s;
+  }
+  .timeline-item:hover .timeline-dot{background:#0af;box-shadow:0 0 20px rgba(0,170,255,0.9);}
+
+  .timeline-card{
+    background:linear-gradient(135deg,rgba(5,15,35,0.9),rgba(8,20,45,0.8));
+    border:1px solid rgba(0,170,255,0.12);
+    border-radius:8px;padding:22px;
+    transition:all 0.3s;
+  }
+  .timeline-item:hover .timeline-card{border-color:rgba(0,170,255,0.3);box-shadow:0 5px 30px rgba(0,100,200,0.15);}
+
+  .timeline-company{
+    font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+    color:#0af;letter-spacing:1px;margin-bottom:4px;
+  }
+  .timeline-role{font-size:15px;font-weight:600;color:#e0f0ff;margin-bottom:12px;}
+  .timeline-desc{font-size:13px;line-height:1.7;color:rgba(160,200,240,0.7);margin-bottom:12px;}
+  .tech-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .tech-chip{
+    font-size:10px;padding:3px 10px;border-radius:3px;
+    background:rgba(0,80,160,0.2);border:1px solid rgba(0,130,220,0.25);
+    color:rgba(100,180,255,0.9);font-family:'Space Mono',monospace;
+  }
+
+  /* =================== PROJECTS =================== */
+  .projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;}
+
+  .project-card{
+    background:linear-gradient(145deg,rgba(5,12,30,0.95),rgba(8,20,50,0.9));
+    border:1px solid rgba(0,170,255,0.12);
+    border-radius:8px;padding:26px;
+    position:relative;overflow:hidden;
+    transition:all 0.4s;cursor:default;
+  }
+  .project-card::after{
+    content:'';position:absolute;
+    width:200px;height:200px;border-radius:50%;
+    background:radial-gradient(circle,rgba(0,100,200,0.08),transparent);
+    bottom:-60px;right:-60px;
+    transition:all 0.4s;
+  }
+  .project-card:hover{transform:translateY(-6px);border-color:rgba(0,200,255,0.3);box-shadow:0 15px 50px rgba(0,100,200,0.25);}
+  .project-card:hover::after{transform:scale(1.5);opacity:0.6;}
+
+  .project-icon{
+    width:48px;height:48px;border-radius:10px;
+    background:linear-gradient(135deg,rgba(0,80,160,0.3),rgba(0,140,230,0.15));
+    border:1px solid rgba(0,170,255,0.2);
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;margin-bottom:16px;position:relative;z-index:1;
+  }
+  .project-title{
+    font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+    color:#e0f0ff;letter-spacing:1px;margin-bottom:10px;position:relative;z-index:1;
+  }
+  .project-desc{font-size:13px;line-height:1.65;color:rgba(150,195,240,0.7);margin-bottom:16px;position:relative;z-index:1;}
+  .project-tags{display:flex;flex-wrap:wrap;gap:6px;position:relative;z-index:1;}
+
+  /* =================== CONTACT =================== */
+  .contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+  .contact-card{
+    background:rgba(5,15,40,0.8);
+    border:1px solid rgba(0,170,255,0.15);
+    border-radius:8px;padding:20px;
+    display:flex;align-items:center;gap:16px;
+    transition:all 0.3s;
+  }
+  .contact-card:hover{border-color:rgba(0,170,255,0.4);background:rgba(0,60,140,0.15);transform:translateX(4px);}
+  .contact-icon{
+    width:40px;height:40px;border-radius:8px;
+    background:rgba(0,80,160,0.2);border:1px solid rgba(0,170,255,0.2);
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+  }
+  .contact-label{font-family:'Space Mono',monospace;font-size:10px;color:rgba(0,170,255,0.6);letter-spacing:1px;margin-bottom:4px;}
+  .contact-value{font-size:13px;color:#e0f0ff;font-weight:600;}
+
+  /* =================== STATS BAR =================== */
+  .stats-bar{
+    display:flex;justify-content:center;gap:0;
+    border:1px solid rgba(0,170,255,0.12);
+    border-radius:8px;overflow:hidden;
+    margin:60px auto;max-width:700px;
+  }
+  .stat-item{
+    flex:1;padding:24px 20px;text-align:center;
+    border-right:1px solid rgba(0,170,255,0.1);
+    background:rgba(5,15,35,0.8);
+    transition:background 0.3s;
+  }
+  .stat-item:last-child{border-right:none;}
+  .stat-item:hover{background:rgba(0,60,140,0.2);}
+  .stat-num{
+    font-family:'Orbitron',monospace;font-size:28px;font-weight:900;
+    color:#0af;text-shadow:0 0 15px rgba(0,170,255,0.5);
+    display:block;margin-bottom:6px;
+  }
+  .stat-label{font-size:11px;color:rgba(150,200,255,0.5);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace;}
+
+  /* =================== FOOTER =================== */
+  .footer{
+    text-align:center;padding:40px;
+    border-top:1px solid rgba(0,170,255,0.1);
+    font-family:'Space Mono',monospace;font-size:11px;
+    color:rgba(0,170,255,0.3);letter-spacing:2px;
+  }
+
+  /* =================== ANIMATIONS =================== */
+  .fade-in{opacity:0;transform:translateY(20px);transition:all 0.7s ease;}
+  .fade-in.visible{opacity:1;transform:translateY(0);}
+
+  /* NAV */
+  .nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 32px;
+    background:rgba(2,4,8,0.85);
+    border-bottom:1px solid rgba(0,170,255,0.08);
+    backdrop-filter:blur(10px);
+  }
+  .nav-logo{
+    font-family:'Orbitron',monospace;font-size:14px;font-weight:900;
+    color:#fff;letter-spacing:2px;
+  }
+  .nav-logo span{color:#0af;}
+  .nav-links{display:flex;gap:24px;}
+  .nav-link{
+    font-family:'Space Mono',monospace;font-size:10px;
+    color:rgba(150,200,255,0.6);letter-spacing:2px;
+    text-transform:uppercase;cursor:pointer;
+    transition:color 0.3s;border:none;background:none;
+  }
+  .nav-link:hover{color:#0af;}
+
+  /* STATUS INDICATOR */
+  .status-dot{
+    display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:#0af;margin-right:8px;
+    box-shadow:0 0 8px #0af;
+    animation:status-pulse 2s ease-in-out infinite;
+  }
+  @keyframes status-pulse{0%,100%{opacity:1;box-shadow:0 0 8px #0af}50%{opacity:0.5;box-shadow:0 0 16px #0af}}
+
+  .available-badge{
+    display:inline-flex;align-items:center;
+    padding:6px 16px;border-radius:20px;
+    background:rgba(0,170,100,0.1);border:1px solid rgba(0,200,100,0.3);
+    font-family:'Space Mono',monospace;font-size:10px;color:#0f9;
+    letter-spacing:2px;
+  }
+
+  .hero-inner{position:relative;z-index:10;}
+
+  /* Scroll indicator */
+  .scroll-indicator{
+    position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    animation:bounce 2s ease-in-out infinite;
+    font-family:'Space Mono',monospace;font-size:9px;
+    color:rgba(0,170,255,0.4);letter-spacing:2px;
+  }
+  @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+  .scroll-line{
+    width:1px;height:40px;
+    background:linear-gradient(180deg,rgba(0,170,255,0.5),transparent);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="grid-overlay"></div>
+<div class="scanline"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">H<span>.</span>S</div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="scrollTo('#about')">About</button>
+    <button class="nav-link" onclick="scrollTo('#skills')">Skills</button>
+    <button class="nav-link" onclick="scrollTo('#experience')">XP</button>
+    <button class="nav-link" onclick="scrollTo('#projects')">Projects</button>
+    <button class="nav-link" onclick="scrollTo('#contact')">Contact</button>
+  </div>
+</nav>
+
+<div class="content">
+
+<!-- HERO -->
+<section class="hero" id="about">
+  <div class="hero-glow"></div>
+  <div class="orbit-ring orbit-1"><div class="orbit-dot"></div></div>
+  <div class="orbit-ring orbit-2"><div class="orbit-dot"></div></div>
+  <div class="orbit-ring orbit-3"></div>
+
+  <div class="hero-inner">
+    <div class="avatar-ring">HS</div>
+    <p class="hero-tag">// portfolio — v2.0.26</p>
+    <h1 class="hero-name">HARSH<br><span>SHRIKUNDAWAR</span></h1>
+    <p class="hero-title" id="typed-title">AI ENGINEER &nbsp;•&nbsp; IOT ARCHITECT &nbsp;•&nbsp; BUILDER<span class="type-cursor"></span></p>
+
+    <div class="hero-badges">
+      <div class="badge">🤖 ML / DL</div>
+      <div class="badge">📡 IoT</div>
+      <div class="badge">🌐 Full Stack</div>
+      <div class="badge">🧠 NLP</div>
+      <div class="badge">☁️ AWS</div>
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <div class="available-badge"><span class="status-dot"></span>AVAILABLE FOR OPPORTUNITIES</div>
+    </div>
+
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="scrollTo('#projects')">VIEW PROJECTS</button>
+      <button class="btn-outline" onclick="scrollTo('#contact')">GET IN TOUCH</button>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar fade-in" id="stats">
+  <div class="stat-item">
+    <span class="stat-num" data-target="3">0</span>
+    <span class="stat-label">Internships</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" data-target="4">0</span>
+    <span class="stat-label">Projects</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" data-target="7">0</span>
+    <span class="stat-label">Certifications</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" data-target="12">0</span>
+    <span class="stat-label">Tech Skills</span>
+  </div>
+</div>
+
+<!-- SKILLS -->
+<section class="section fade-in" id="skills">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <div class="section-line"></div>
+    <h2 class="section-title">SKILL <span>MATRIX</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-icon">🐍</div>
+      <div class="skill-name">PROGRAMMING</div>
+      <div class="skill-tags">
+        <span class="skill-tag">Python</span>
+        <span class="skill-tag">JavaScript</span>
+        <span class="skill-tag">C/C++</span>
+        <span class="skill-tag">Java</span>
+        <span class="skill-tag">HTML</span>
+        <span class="skill-tag">CSS</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">🧠</div>
+      <div class="skill-name">AI & DATA</div>
+      <div class="skill-tags">
+        <span class="skill-tag">ML / DL</span>
+        <span class="skill-tag">NLP</span>
+        <span class="skill-tag">Computer Vision</span>
+        <span class="skill-tag">GANs</span>
+        <span class="skill-tag">SQL</span>
+        <span class="skill-tag">MongoDB</span>
+        <span class="skill-tag">Data Analytics</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">📡</div>
+      <div class="skill-name">IOT & HARDWARE</div>
+      <div class="skill-tags">
+        <span class="skill-tag">ESP32 CAM</span>
+        <span class="skill-tag">Arduino</span>
+        <span class="skill-tag">Firebase</span>
+        <span class="skill-tag">Labview</span>
+        <span class="skill-tag">RTC Module</span>
+        <span class="skill-tag">Android Studio</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">🛠️</div>
+      <div class="skill-name">TOOLS & CLOUD</div>
+      <div class="skill-tags">
+        <span class="skill-tag">AWS</span>
+        <span class="skill-tag">GitHub</span>
+        <span class="skill-tag">VS Code</span>
+        <span class="skill-tag">Cloud Computing</span>
+        <span class="skill-tag">Blockchain</span>
+        <span class="skill-tag">Laravel</span>
+        <span class="skill-tag">PHP</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">🎯</div>
+      <div class="skill-name">AI TOOLS</div>
+      <div class="skill-tags">
+        <span class="skill-tag">Prompt Engineering</span>
+        <span class="skill-tag">ChatGPT</span>
+        <span class="skill-tag">Gemini</span>
+        <span class="skill-tag">Blackbox AI</span>
+        <span class="skill-tag">Gradio</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">📚</div>
+      <div class="skill-name">FRAMEWORKS & LIBS</div>
+      <div class="skill-tags">
+        <span class="skill-tag">Scikit-Learn</span>
+        <span class="skill-tag">Pandas</span>
+        <span class="skill-tag">Seaborn</span>
+        <span class="skill-tag">PyResparser</span>
+        <span class="skill-tag">PDFMiner</span>
+        <span class="skill-tag">Keras / TF</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section class="section fade-in" id="experience">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <div class="section-line"></div>
+    <h2 class="section-title">EXPERIENCE <span>LOG</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <div class="timeline-company">ICONICPAGES</div>
+        <div class="timeline-role">AI Intern</div>
+        <div class="timeline-desc">
+          Architected an e-commerce platform with predictive capabilities and user experience enhancements. Implemented backend CRUD operations for system stability and collaborated on an automated product shoot generator to optimize digital marketing workflows.
+        </div>
+        <div class="tech-chips">
+          <span class="tech-chip">PHP</span>
+          <span class="tech-chip">Laravel</span>
+          <span class="tech-chip">Python</span>
+          <span class="tech-chip">Prompt Engineering</span>
+          <span class="tech-chip">ChatGPT</span>
+          <span class="tech-chip">Gemini</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <div class="timeline-company">CENTRE OF EXCELLENCE IN IOT</div>
+        <div class="timeline-role">IoT Intern</div>
+        <div class="timeline-desc">
+          Built a smart medication dispenser integrating AI and IoT for improved healthcare management. Developed an Android app for remote control and live video monitoring with real-time Firebase integration.
+        </div>
+        <div class="tech-chips">
+          <span class="tech-chip">ESP32 CAM</span>
+          <span class="tech-chip">Arduino Uno</span>
+          <span class="tech-chip">Android Studio</span>
+          <span class="tech-chip">Firebase</span>
+          <span class="tech-chip">Python</span>
+          <span class="tech-chip">C++</span>
+          <span class="tech-chip">Labview</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-card">
+        <div class="timeline-company">MATCHED MEE ENTERPRISES PVT. LTD.</div>
+        <div class="timeline-role">Web Development Intern</div>
+        <div class="timeline-desc">
+          Assisted in web design and UI/UX improvements, contributing to clean, accessible front-end implementations.
+        </div>
+        <div class="tech-chips">
+          <span class="tech-chip">HTML</span>
+          <span class="tech-chip">CSS</span>
+          <span class="tech-chip">UI/UX Design</span>
+          <span class="tech-chip">VS Code</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section class="section fade-in" id="projects">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <div class="section-line"></div>
+    <h2 class="section-title">PROJECT <span>VAULT</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="projects-grid">
+    <div class="project-card">
+      <div class="project-icon">🎵</div>
+      <div class="project-title">MUSIC GENERATION (GANs)</div>
+      <div class="project-desc">Engineered a Generative AI system using GANs to analyze musical patterns and compose original MIDI files. Features an interactive Gradio interface for real-time music generation.</div>
+      <div class="project-tags">
+        <span class="skill-tag">Python</span>
+        <span class="skill-tag">GANs</span>
+        <span class="skill-tag">Deep Learning</span>
+        <span class="skill-tag">Neural Networks</span>
+        <span class="skill-tag">Gradio</span>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-icon">📄</div>
+      <div class="project-title">RESUME SCANNER (NLP)</div>
+      <div class="project-desc">Built an intelligent recruitment automation tool that extracts skills, experience, and key attributes from PDF resumes using NLP, streamlining candidate evaluation pipelines.</div>
+      <div class="project-tags">
+        <span class="skill-tag">Python</span>
+        <span class="skill-tag">NLP</span>
+        <span class="skill-tag">PDFMiner</span>
+        <span class="skill-tag">PyResparser</span>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-icon">💳</div>
+      <div class="project-title">CREDIT CARD FRAUD DETECTION</div>
+      <div class="project-desc">Designed a real-time ML model evaluating transaction patterns to identify fraudulent activities with high accuracy, leveraging advanced classification algorithms.</div>
+      <div class="project-tags">
+        <span class="skill-tag">Python</span>
+        <span class="skill-tag">Scikit-Learn</span>
+        <span class="skill-tag">Pandas</span>
+        <span class="skill-tag">Seaborn</span>
+        <span class="skill-tag">Jupyter</span>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-icon">💊</div>
+      <div class="project-title">SMART MEDICATION DISPENSER</div>
+      <div class="project-desc">IoT-AI integrated healthcare device with automated dispensing, live camera monitoring via ESP32 CAM, and a dedicated Android app for remote patient management.</div>
+      <div class="project-tags">
+        <span class="skill-tag">ESP32 CAM</span>
+        <span class="skill-tag">Arduino</span>
+        <span class="skill-tag">Android Studio</span>
+        <span class="skill-tag">Firebase</span>
+        <span class="skill-tag">Python</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EDUCATION & CERTS -->
+<section class="section fade-in">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <div class="section-line"></div>
+    <h2 class="section-title">EDUCATION &amp; <span>CERTS</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;">
+    <div class="skill-card">
+      <div class="skill-icon">🎓</div>
+      <div class="skill-name">B.TECH IN ARTIFICIAL INTELLIGENCE</div>
+      <p style="font-size:13px;color:rgba(0,170,255,0.7);margin-bottom:8px;font-family:'Space Mono',monospace;font-size:11px;">G. H. Raisoni Institute of Engineering &amp; Technology, Nagpur</p>
+      <p style="font-size:12px;color:rgba(150,200,255,0.5);">Core: Machine Learning • Deep Learning • IoT • Cloud</p>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon">🏆</div>
+      <div class="skill-name">CERTIFICATIONS</div>
+      <div class="skill-tags" style="gap:8px;">
+        <span class="skill-tag">Masters in AI Tools (B10x)</span>
+        <span class="skill-tag">Python Project Dev (Cojag)</span>
+        <span class="skill-tag">AI Bootcamp (Devtown)</span>
+        <span class="skill-tag">IEEE Workshop on AI</span>
+        <span class="skill-tag">Python Pandas (AI Dept)</span>
+        <span class="skill-tag">Leadership (NPTEL)</span>
+        <span class="skill-tag">DevFest 2022 (GDG Nagpur)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="section fade-in" id="contact">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <div class="section-line"></div>
+    <h2 class="section-title">OPEN <span>CHANNEL</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="contact-grid">
+    <div class="contact-card">
+      <div class="contact-icon">📧</div>
+      <div>
+        <div class="contact-label">EMAIL</div>
+        <div class="contact-value" style="font-size:12px;">harsh.shrikundawar.ai@gmail.com</div>
+      </div>
+    </div>
+    <div class="contact-card">
+      <div class="contact-icon">📱</div>
+      <div>
+        <div class="contact-label">PHONE</div>
+        <div class="contact-value">+91 9356153357</div>
+      </div>
+    </div>
+    <div class="contact-card">
+      <div class="contact-icon">💼</div>
+      <div>
+        <div class="contact-label">LINKEDIN</div>
+        <div class="contact-value" style="font-size:12px;">harsh-shrikundawar</div>
+      </div>
+    </div>
+    <div class="contact-card">
+      <div class="contact-icon">🐙</div>
+      <div>
+        <div class="contact-label">GITHUB</div>
+        <div class="contact-value" style="font-size:12px;">harshshrikundawarai-01</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;">
+    <p style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(0,170,255,0.4);letter-spacing:3px;margin-bottom:20px;">BASED IN NAGPUR, INDIA &nbsp;•&nbsp; OPEN TO REMOTE & RELOCATION</p>
+    <button class="btn-primary">DOWNLOAD RESUME</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div style="margin-bottom:12px;font-size:14px;color:rgba(0,170,255,0.3);">◈ ◈ ◈</div>
+  HARSH SHRIKUNDAWAR &nbsp;•&nbsp; AI ENGINEER &nbsp;•&nbsp; 2026
+  <div style="margin-top:8px;font-size:10px;color:rgba(0,170,255,0.2);">// BUILT WITH INTELLIGENCE, DRIVEN BY CURIOSITY //</div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+/* STARFIELD */
+(function(){
+  const canvas=document.getElementById('starfield');
+  const ctx=canvas.getContext('2d');
+  let W,H,stars=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  function initStars(){
+    stars=[];
+    for(let i=0;i<180;i++){
+      stars.push({
+        x:Math.random()*W,y:Math.random()*H,
+        r:Math.random()*1.5+0.2,
+        a:Math.random(),
+        speed:Math.random()*0.3+0.05,
+        twinkle:Math.random()*Math.PI*2
+      });
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.twinkle+=0.02;
+      const alpha=s.a*(0.5+0.5*Math.sin(s.twinkle));
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(100,180,255,${alpha})`;
+      ctx.fill();
+      s.y+=s.speed;
+      if(s.y>H){s.y=0;s.x=Math.random()*W;}
+    });
+    requestAnimationFrame(draw);
+  }
+  resize();initStars();draw();
+  window.addEventListener('resize',()=>{resize();initStars();});
+})();
+
+/* SCROLL REVEAL */
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');}
+  });
+},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
+
+/* COUNTER ANIMATION */
+function animateCounters(){
+  document.querySelectorAll('.stat-num[data-target]').forEach(el=>{
+    const target=parseInt(el.dataset.target);
+    let current=0;
+    const step=target/40;
+    const timer=setInterval(()=>{
+      current=Math.min(current+step,target);
+      el.textContent=Math.floor(current)+(el.dataset.suffix||'');
+      if(current>=target)clearInterval(timer);
+    },40);
+  });
+}
+const statsObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){animateCounters();statsObs.disconnect();}});
+},{threshold:0.5});
+const statsEl=document.getElementById('stats');
+if(statsEl)statsObs.observe(statsEl);
+
+/* SMOOTH SCROLL */
+function scrollTo(id){
+  const el=document.querySelector(id);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
